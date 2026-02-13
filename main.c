@@ -3,6 +3,17 @@
 #include <time.h>
 #include <string.h>
 #include "operations.h"
+#include <windows.h>
+#include <psapi.h>
+
+// Function to get peak memory usage in Kilobytes
+size_t get_peak_memory() {
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+        return pmc.PeakWorkingSetSize / 1024; // Convert bytes to KB
+    }
+    return 0;
+}
 
 // Handle directory creation for Windows/Linux
 #ifdef _WIN32
@@ -46,9 +57,13 @@ int* load_data(const char* filename, int n) {
 void run_benchmark(const char* algo_name, void (*sort_func)(int*, int), int n, const char* input_file) {
     // SCENARIO 1: Sorting Only
     int *arr1 = load_data(input_file, n);
+
+    // Sorting Only (Measuring both Time and Memory)
     clock_t s1 = clock();
     sort_func(arr1, n);
     clock_t e1 = clock();
+    
+    size_t peak_mem = get_peak_memory(); // Capture peak RAM usage
     double time_only = (double)(e1 - s1) / CLOCKS_PER_SEC;
     free(arr1);
 
@@ -84,6 +99,7 @@ void run_benchmark(const char* algo_name, void (*sort_func)(int*, int), int n, c
     printf("1. Sorting time only:          %.6f s\n", time_only);
     printf("2. Sorting + console output:   %.6f s\n", time_console);
     printf("3. Sorting + file output:      %.6f s\n", time_file);
+    printf("Peak memory Consumption:            %zu KB\n", peak_mem);
     printf("==========================================================\n");
 }
 
