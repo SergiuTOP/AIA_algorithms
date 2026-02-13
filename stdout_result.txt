@@ -1,0 +1,9 @@
+1
+3
+5
+7
+9
+Algorithm: tim_sort
+Elements sorted: 5
+Sorting time only: 0.000003 seconds
+Sorting + output time: 0.000013 seconds

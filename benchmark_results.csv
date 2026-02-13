@@ -1,0 +1,16 @@
+algorithm,input_case,size,execution_time_seconds,estimated_aux_memory_bytes
+quick_sort,random,100,0.000005000,384
+merge_sort,random,100,0.000033000,400
+counting_sort,random,100,0.000001000,796
+heap_sort,random,100,0.000007000,128
+tim_sort,random,100,0.000012000,400
+quick_sort,ascending,100,0.000003000,384
+merge_sort,ascending,100,0.000017000,400
+counting_sort,ascending,100,0.000002000,800
+heap_sort,ascending,100,0.000006000,128
+tim_sort,ascending,100,0.000002000,400
+quick_sort,descending,100,0.000003000,384
+merge_sort,descending,100,0.000017000,400
+counting_sort,descending,100,0.000001000,800
+heap_sort,descending,100,0.000006000,128
+tim_sort,descending,100,0.000004000,400
