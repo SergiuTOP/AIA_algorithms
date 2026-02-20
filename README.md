@@ -83,8 +83,6 @@ Behavior:
   - `random/input_order`
   - `ascending`
   - `descending`
-- Cases are separated in terminal by delimiter lines:
-  - `======`
 - Metrics:
   - no output target: `sorting only` + `peak memory consumption`
   - `stdout`: `sorting only` + `sorting + console output` + `peak memory consumption`
