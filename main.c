@@ -53,6 +53,8 @@ static void print_usage(const char *program_name) {
     printf("  %s <algo> in.txt\n", program_name);
     printf("  %s <algo> in.txt stdout\n", program_name);
     printf("  %s <algo> in.txt out.txt\n", program_name);
+    printf("  %s <algo1> <algo2> ... in.txt\n", program_name);
+    printf("  %s all in.txt\n", program_name);
     printf("Algorithms: quick, merge, heap, counting, tim\n");
 }
 
@@ -63,6 +65,10 @@ static const AlgorithmSpec *find_algorithm(const char *name) {
         }
     }
     return NULL;
+}
+
+static int is_algorithm_name(const char *name) {
+    return find_algorithm(name) != NULL;
 }
 
 static int *load_input_file(const char *input_file, int *out_n) {
@@ -158,9 +164,9 @@ static int write_to_file(FILE *fp, const int *arr, int n) {
 }
 
 int main(int argc, char *argv[]) {
-    const AlgorithmSpec *algo = NULL;
     const char *input_file = NULL;
     const char *output_target = NULL;
+    int input_index = 0;
     int n = 0;
     int *input_arr = NULL;
     int *asc_arr = NULL;
@@ -169,22 +175,65 @@ int main(int argc, char *argv[]) {
     FILE *output_fp = NULL;
     const char *case_names[] = {"random/input_order", "ascending", "descending"};
     int *case_data[3];
+    int selected[5] = {0, 0, 0, 0, 0};
+    int selected_count = 0;
 
-    if (argc != 3 && argc != 4) {
+    if (argc < 3) {
         print_usage(argv[0]);
         return 1;
     }
 
-    algo = find_algorithm(argv[1]);
-    if (!algo) {
+    if (strcmp(argv[argc - 1], "stdout") == 0) {
+        output_target = argv[argc - 1];
+        output_mode = 1;
+        input_index = argc - 2;
+    } else if (argc >= 4 && !is_algorithm_name(argv[argc - 2]) && strcmp(argv[argc - 2], "all") != 0) {
+        output_target = argv[argc - 1];
+        output_mode = 2;
+        input_index = argc - 2;
+    } else {
+        input_index = argc - 1;
+    }
+
+    if (input_index <= 1) {
         print_usage(argv[0]);
         return 1;
     }
 
-    input_file = argv[2];
-    if (argc == 4) {
-        output_target = argv[3];
-        output_mode = (strcmp(output_target, "stdout") == 0) ? 1 : 2;
+    input_file = argv[input_index];
+
+    for (int i = 1; i < input_index; i++) {
+        if (strcmp(argv[i], "all") == 0) {
+            for (int j = 0; j < k_algorithm_count; j++) {
+                if (!selected[j]) {
+                    selected[j] = 1;
+                    selected_count++;
+                }
+            }
+            continue;
+        }
+
+        int found = 0;
+        for (int j = 0; j < k_algorithm_count; j++) {
+            if (strcmp(argv[i], k_algorithms[j].key) == 0) {
+                if (!selected[j]) {
+                    selected[j] = 1;
+                    selected_count++;
+                }
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found) {
+            print_usage(argv[0]);
+            return 1;
+        }
+    }
+
+    if (selected_count == 0) {
+        print_usage(argv[0]);
+        return 1;
     }
 
     input_arr = load_input_file(input_file, &n);
@@ -221,70 +270,79 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("ALGORITHM: %s\n", algo->display_name);
-    printf("ELEMENTS: %d\n", n);
+    for (int a = 0; a < k_algorithm_count; a++) {
+        if (!selected[a]) {
+            continue;
+        }
 
-    for (int i = 0; i < 3; i++) {
-        int *arr_sort_only = clone_array(case_data[i], n);
-        int *arr_sort_and_output = clone_array(case_data[i], n);
-        if (!arr_sort_only || !arr_sort_and_output) {
-            if (output_fp) {
-                fclose(output_fp);
+        const AlgorithmSpec *algo = &k_algorithms[a];
+        printf("\n");
+        printf("\n=============== ALGORITHM: %s ===============\n", algo->display_name);
+        printf("ELEMENTS: %d\n", n);
+
+        for (int i = 0; i < 3; i++) {
+            int *arr_sort_only = clone_array(case_data[i], n);
+            int *arr_sort_and_output = clone_array(case_data[i], n);
+            if (!arr_sort_only || !arr_sort_and_output) {
+                if (output_fp) {
+                    fclose(output_fp);
+                }
+                free(input_arr);
+                free(asc_arr);
+                free(desc_arr);
+                free(arr_sort_only);
+                free(arr_sort_and_output);
+                printf("Failed to allocate memory for sorting.\n");
+                return 1;
             }
-            free(input_arr);
-            free(asc_arr);
-            free(desc_arr);
+
+            clock_t start = clock();
+            algo->sort_func(arr_sort_only, n);
+            clock_t end = clock();
+            double sorting_only_time = (double)(end - start) / CLOCKS_PER_SEC;
+            double sorting_plus_output_time = 0.0;
+
+            if (output_mode == 1 || output_mode == 2) {
+                start = clock();
+                algo->sort_func(arr_sort_and_output, n);
+                if (output_mode == 1) {
+                    write_to_stdout(arr_sort_and_output, n);
+                } else {
+                    fprintf(output_fp, "ALGORITHM: %s\n", algo->display_name);
+                    fprintf(output_fp, "CASE: %s\n", case_names[i]);
+                    if (!write_to_file(output_fp, arr_sort_and_output, n)) {
+                        fclose(output_fp);
+                        free(input_arr);
+                        free(asc_arr);
+                        free(desc_arr);
+                        free(arr_sort_only);
+                        free(arr_sort_and_output);
+                        printf("Failed to write output file: %s\n", output_target);
+                        return 1;
+                    }
+                    fprintf(output_fp, "\n");
+                }
+                end = clock();
+                sorting_plus_output_time = (double)(end - start) / CLOCKS_PER_SEC;
+            }
+
+            printf("\n======\n");
+            printf("CASE: %s\n", case_names[i]);
+            if (output_mode == 0) {
+                printf("1. Computation time (sorting only): %.6f s\n", sorting_only_time);
+            } else if (output_mode == 1) {
+                printf("1. Computation time (sorting only): %.6f s\n", sorting_only_time);
+                printf("2. Computation time (sorting + console output): %.6f s\n", sorting_plus_output_time);
+            } else {
+                printf("1. Computation time (sorting only): %.6f s\n", sorting_only_time);
+                printf("2. Computation time (sorting + file output): %.6f s\n", sorting_plus_output_time);
+            }
+            printf("Peak memory consumption: %zu KB\n", get_peak_memory_kb());
+            printf("======\n");
+
             free(arr_sort_only);
             free(arr_sort_and_output);
-            printf("Failed to allocate memory for sorting.\n");
-            return 1;
         }
-
-        clock_t start = clock();
-        algo->sort_func(arr_sort_only, n);
-        clock_t end = clock();
-        double sorting_only_time = (double)(end - start) / CLOCKS_PER_SEC;
-        double sorting_plus_output_time = 0.0;
-
-        if (output_mode == 1 || output_mode == 2) {
-            start = clock();
-            algo->sort_func(arr_sort_and_output, n);
-            if (output_mode == 1) {
-                write_to_stdout(arr_sort_and_output, n);
-            } else {
-                fprintf(output_fp, "CASE: %s\n", case_names[i]);
-                if (!write_to_file(output_fp, arr_sort_and_output, n)) {
-                    fclose(output_fp);
-                    free(input_arr);
-                    free(asc_arr);
-                    free(desc_arr);
-                    free(arr_sort_only);
-                    free(arr_sort_and_output);
-                    printf("Failed to write output file: %s\n", output_target);
-                    return 1;
-                }
-                fprintf(output_fp, "\n");
-            }
-            end = clock();
-            sorting_plus_output_time = (double)(end - start) / CLOCKS_PER_SEC;
-        }
-
-        printf("\n======\n");
-        printf("CASE: %s\n", case_names[i]);
-        if (output_mode == 0) {
-            printf("1. Computation time (sorting only): %.6f s\n", sorting_only_time);
-        } else if (output_mode == 1) {
-            printf("1. Computation time (sorting only): %.6f s\n", sorting_only_time);
-            printf("2. Computation time (sorting + console output): %.6f s\n", sorting_plus_output_time);
-        } else {
-            printf("1. Computation time (sorting only): %.6f s\n", sorting_only_time);
-            printf("2. Computation time (sorting + file output): %.6f s\n", sorting_plus_output_time);
-        }
-        printf("Peak memory consumption: %zu KB\n", get_peak_memory_kb());
-        printf("======\n");
-
-        free(arr_sort_only);
-        free(arr_sort_and_output);
     }
 
     if (output_fp) {
