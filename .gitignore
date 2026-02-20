@@ -1,0 +1,22 @@
+# Build / compiled files
+*.o
+*.out
+*.exe
+*.a
+*.so
+*.dylib
+
+# CMake build folders
+cmake-build-*/
+build/
+
+# Benchmark generated outputs
+*.txt
+*.csv
+
+# JetBrains / CLion
+.idea/
+*.iml
+
+# macOS
+.DS_Store
