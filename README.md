@@ -57,27 +57,72 @@ Sorting an array of 1,000,000 randomly generated elements.
 
 ## Build
 
-### macOS/Linux (no CMake required)
+### macOS/Linux (GCC/Clang, no CMake)
 ```bash
-cc -std=c11 main.c algorithms/*.c -o sort
+cc -O2 -std=c11 main.c algorithms/*.c -o sort
 ```
 
-### CMake (optional)
+### macOS/Linux (CMake, optional)
 ```bash
 cmake -S . -B build
 cmake --build build
 ```
 
+### Windows (MinGW-w64 GCC, PowerShell or `cmd`)
+```bash
+gcc -O2 -std=c11 main.c algorithms/quick_sort.c algorithms/merge_sort.c algorithms/heap_sort.c algorithms/counting_sort.c algorithms/tim_sort.c -o sort.exe
+```
+
+### Windows (CMake, optional)
+```powershell
+cmake -S . -B build
+cmake --build build --config Release
+```
+
 ## Run
 
-Only these command formats are supported:
+Supported command formats (same arguments on all platforms):
+```text
+<program> <algo> in.txt
+<program> <algo> in.txt stdout
+<program> <algo> in.txt out.txt
+<program> <algo1> <algo2> ... in.txt
+<program> all in.txt
+```
+
+### macOS/Linux examples
 ```bash
 ./sort quick in.txt
 ./sort merge in.txt stdout
 ./sort heap in.txt out.txt
 ./sort counting in.txt
 ./sort tim in.txt
+./sort quick merge heap in.txt
+./sort all in.txt
 ```
+
+### Windows PowerShell examples
+```powershell
+.\sort.exe quick in.txt
+.\sort.exe merge in.txt stdout
+.\sort.exe heap in.txt out.txt
+.\sort.exe counting in.txt
+.\sort.exe tim in.txt
+.\sort.exe quick merge heap in.txt
+.\sort.exe all in.txt
+```
+
+### Windows Command Prompt (`cmd`) examples
+```cmd
+sort.exe quick in.txt
+sort.exe merge in.txt stdout
+sort.exe heap in.txt out.txt
+sort.exe counting in.txt
+sort.exe tim in.txt
+sort.exe quick merge heap in.txt
+sort.exe all in.txt
+```
+
 Behavior:
 - Runs a full report for the selected algorithm on 3 cases from the same input values:
   - `random/input_order`
