@@ -31,7 +31,22 @@ static const int k_algorithm_count = (int)(sizeof(k_algorithms) / sizeof(k_algor
 static size_t get_peak_memory_kb(void) {
 #ifdef _WIN32
     PROCESS_MEMORY_COUNTERS pmc;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+
+    typedef BOOL(WINAPI *get_process_memory_info_fn_t)(HANDLE, PPROCESS_MEMORY_COUNTERS, DWORD);
+    static get_process_memory_info_fn_t p_get_process_memory_info = NULL;
+    static int resolved = 0;
+
+    if (!resolved) {
+        HMODULE psapi_module = LoadLibraryA("psapi.dll");
+        if (psapi_module) {
+            p_get_process_memory_info =
+                (get_process_memory_info_fn_t)GetProcAddress(psapi_module, "GetProcessMemoryInfo");
+        }
+        resolved = 1;
+    }
+
+    if (p_get_process_memory_info &&
+        p_get_process_memory_info(GetCurrentProcess(), &pmc, (DWORD)sizeof(pmc))) {
         return (size_t)(pmc.PeakWorkingSetSize / 1024);
     }
     return 0;
