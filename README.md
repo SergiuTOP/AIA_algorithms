@@ -79,6 +79,18 @@ cmake -S . -B build
 cmake --build build --config Release
 ```
 
+### Generate input elements (`in.txt`)
+Use the helper script after building to create test data.
+
+```bash
+python3 generate_input.py 100000 --min -1000000 --max 1000000 --seed 42
+```
+
+Windows PowerShell example:
+```powershell
+python .\generate_input.py 100000 --min -1000000 --max 1000000 --seed 42
+```
+
 ## Run
 
 Supported command formats (same arguments on all platforms):
